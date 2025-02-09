@@ -22,7 +22,7 @@
 		"build": "pkgroll --minify",
 		"lint": "",
 		"type-check": "tsc",
-		"test": "tsx tests",
+		"test": "tsx tests/index.ts",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"dependencies": {

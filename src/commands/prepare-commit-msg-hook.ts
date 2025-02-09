@@ -48,7 +48,8 @@ export default () =>
 				config['max-length'],
 				config.type,
 				config.timeout,
-				config.proxy
+				config.proxy,
+				config.host
 			);
 		} finally {
 			s.stop('Changes analyzed');

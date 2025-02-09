@@ -4,10 +4,10 @@ import type {
 	CreateChatCompletionRequest,
 	CreateChatCompletionResponse,
 } from 'openai';
-import {
-	type TiktokenModel,
-	// encoding_for_model,
-} from '@dqbd/tiktoken';
+// import {
+// 	type TiktokenModel,
+// 	// encoding_for_model,
+// } from '@dqbd/tiktoken';
 import createHttpsProxyAgent from 'https-proxy-agent';
 import { KnownError } from './error.js';
 import type { CommitType } from './config.js';
@@ -58,7 +58,7 @@ const httpsPost = async (
 			request.destroy();
 			reject(
 				new KnownError(
-					`Time out error: request took over ${timeout}ms. Try increasing the \`timeout\` config, or checking the OpenAI API status https://status.openai.com`
+					`Time out error: request host: ${hostname} took over ${timeout}ms. Try increasing the \`timeout\` config, or checking the OpenAI API status https://status.openai.com`
 				)
 			);
 		});
@@ -71,17 +71,25 @@ const createChatCompletion = async (
 	apiKey: string,
 	json: CreateChatCompletionRequest,
 	timeout: number,
-	proxy?: string
+	proxy?: string,
+	host?: string
 ) => {
+	// console.log('apiKey', apiKey);
+	// console.log('json', json);
+	// console.log('timeout', timeout);
+	// console.log('proxy', proxy);
 	const { response, data } = await httpsPost(
-		'api.openai.com',
+		// 'api.openai.com',
+		// 'api.deepseek.com',
+		host || 'api.openai.com',
 		'/v1/chat/completions',
+		// '/chat/completions',
 		{
 			Authorization: `Bearer ${apiKey}`,
 		},
 		json,
 		timeout,
-		proxy
+		proxy,
 	);
 
 	if (
@@ -89,14 +97,15 @@ const createChatCompletion = async (
 		response.statusCode < 200 ||
 		response.statusCode > 299
 	) {
-		let errorMessage = `OpenAI API Error: ${response.statusCode} - ${response.statusMessage}`;
+		// let errorMessage = `OpenAI API Error: ${response.statusCode} - ${response.statusMessage}`;
+		let errorMessage = `DeepSeek API Error: ${response.statusCode} - ${response.statusMessage}, host: ${host}, apiKey: ${apiKey}`;
 
 		if (data) {
 			errorMessage += `\n\n${data}`;
 		}
 
 		if (response.statusCode === 500) {
-			errorMessage += '\n\nCheck the API status: https://status.openai.com';
+			errorMessage += '\n\nCheck the API status: https://status.deepseek.com';
 		}
 
 		throw new KnownError(errorMessage);
@@ -132,14 +141,16 @@ const deduplicateMessages = (array: string[]) => Array.from(new Set(array));
 
 export const generateCommitMessage = async (
 	apiKey: string,
-	model: TiktokenModel,
+	// model: TiktokenModel,
+	model: any,
 	locale: string,
 	diff: string,
 	completions: number,
 	maxLength: number,
 	type: CommitType,
 	timeout: number,
-	proxy?: string
+	proxy?: string,
+	host?: string
 ) => {
 	try {
 		const completion = await createChatCompletion(
@@ -162,10 +173,12 @@ export const generateCommitMessage = async (
 				presence_penalty: 0,
 				max_tokens: 200,
 				stream: false,
-				n: completions,
+				// n: completions,
+				n: 1,
 			},
 			timeout,
-			proxy
+			proxy,
+			host
 		);
 
 		return deduplicateMessages(

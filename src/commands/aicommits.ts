@@ -53,7 +53,8 @@ export default async (
 
 		const { env } = process;
 		const config = await getConfig({
-			OPENAI_KEY: env.OPENAI_KEY || env.OPENAI_API_KEY,
+			// 暂时不从环境变量读取OpenAI KEY
+			// OPENAI_KEY: env.OPENAI_KEY || env.OPENAI_API_KEY,
 			proxy:
 				env.https_proxy || env.HTTPS_PROXY || env.http_proxy || env.HTTP_PROXY,
 			generate: generate?.toString(),
@@ -73,7 +74,8 @@ export default async (
 				config['max-length'],
 				config.type,
 				config.timeout,
-				config.proxy
+				config.proxy,
+				config.host
 			);
 		} finally {
 			s.stop('Changes analyzed');

@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import ini from 'ini';
-import type { TiktokenModel } from '@dqbd/tiktoken';
+// import type { TiktokenModel } from '@dqbd/tiktoken';
 import { fileExists } from './fs.js';
 import { KnownError } from './error.js';
 
@@ -34,7 +34,8 @@ const configParsers = {
 	},
 	locale(locale?: string) {
 		if (!locale) {
-			return 'en';
+			// return 'en';
+			return 'zh';
 		}
 
 		parseAssert('locale', locale, 'Cannot be empty');
@@ -82,10 +83,12 @@ const configParsers = {
 	},
 	model(model?: string) {
 		if (!model || model.length === 0) {
-			return 'gpt-3.5-turbo';
+			// return 'gpt-3.5-turbo';
+			return 'deepseek-chat';
 		}
 
-		return model as TiktokenModel;
+		// return model as TiktokenModel;
+		return model as any;
 	},
 	timeout(timeout?: string) {
 		if (!timeout) {
@@ -114,6 +117,24 @@ const configParsers = {
 		);
 
 		return parsed;
+	},
+	host(host?: string) {
+		if (!host || host.length === 0) {
+			// 默认使用 OpenAI 的 API 地址
+			return 'api.openai.com';
+		}
+
+		// 验证域名格式 - 允许域名或IP地址格式
+		parseAssert(
+			'host',
+			/^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$|^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host),
+			'必须是有效的域名或IP地址'
+		);
+
+		// 移除协议前缀（如果有）
+		const cleanUrl = host.replace(/^https?:\/\//, '');
+		// 移除末尾的斜杠，保持一致性
+		return cleanUrl.replace(/\/+$/, '');
 	},
 } as const;
 

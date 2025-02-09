@@ -132,21 +132,27 @@ export default testSuite(({ describe }) => {
 			configOverrides: Partial<ValidConfig> = {}
 		): Promise<string> {
 			const config = {
-				locale: 'en',
+				// locale: 'en',
+				locale: 'zh',
 				type: 'conventional',
 				generate: 1,
 				'max-length': 50,
 				...configOverrides,
 			} as ValidConfig;
+			console.log("config", config)
 			const commitMessages = await generateCommitMessage(
 				OPENAI_KEY!,
-				'gpt-3.5-turbo',
+				// 'gpt-3.5-turbo',
+				// 'deepseek-chat',
+				config.model,
 				config.locale,
 				gitDiff,
 				config.generate,
 				config['max-length'],
 				config.type,
-				7000
+				7000,
+				config.proxy,
+				config.host
 			);
 
 			return commitMessages[0];

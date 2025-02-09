@@ -254,3 +254,48 @@ Video coming soon where I rebuild it from scratch to show you how to easily buil
 ## Contributing
 
 If you want to help fix a bug or implement a feature in [Issues](https://github.com/Nutlope/aicommits/issues), checkout the [Contribution Guide](CONTRIBUTING.md) to learn how to setup and test the project
+
+# 使用
+从本地安装这个 aicommits 项目,我建议按以下步骤操作:
+
+1. 首先克隆项目到本地:
+```bash
+git clone https://github.com/Nutlope/aicommits.git
+cd aicommits
+```
+
+2. 安装依赖:
+```bash
+# 使用 pnpm (推荐,因为项目使用 pnpm)
+pnpm install
+
+# 或者使用 npm
+npm install
+```
+
+3. 构建项目:
+```bash
+pnpm build
+```
+
+4. 全局安装到本地系统:
+```bash
+# 在项目根目录下执行
+npm link
+# 或
+pnpm link --global
+```
+
+安装完成后,你就可以在任何目录使用 `aicommits` 或 `aic` 命令了。
+
+注意事项:
+- 这个工具需要 OpenAI API key 才能工作
+- 第一次运行时会提示你配置 API key
+- 建议使用 pnpm 因为项目的 `package.json` 使用了 pnpm 相关的命令
+
+如果想要卸载:
+```bash
+npm unlink aicommits -g
+# 或
+pnpm unlink --global aicommits
+```
