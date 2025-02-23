@@ -58,7 +58,7 @@ const httpsPost = async (
 			request.destroy();
 			reject(
 				new KnownError(
-					`Time out error: request host: ${hostname} took over ${timeout}ms. Try increasing the \`timeout\` config, or checking the OpenAI API status https://status.openai.com`
+					`Time out error: request host: ${hostname}${path} took over ${timeout}ms. Try increasing the \`timeout\` config, or checking the OpenAI API status https://status.openai.com`
 				)
 			);
 		});
@@ -72,18 +72,32 @@ const createChatCompletion = async (
 	json: CreateChatCompletionRequest,
 	timeout: number,
 	proxy?: string,
-	host?: string
+	host?: string,
+	base_url?: string
 ) => {
 	// console.log('apiKey', apiKey);
 	// console.log('json', json);
 	// console.log('timeout', timeout);
 	// console.log('proxy', proxy);
+	let path = '/v1/chat/completions'
+	if (base_url) {
+		// 解析 url 获取 host 和 path
+		const urlObj = new URL(base_url)
+		host = urlObj.hostname
+		// 因为默认是 /v1/chat/completions，所以需要拼接
+		// https://dashscope.aliyuncs.com/compatible-mode/v1
+		path = urlObj.pathname + '/chat/completions'
+		console.log("AICOMMIT ENV START ====")
+		console.log('base_url', base_url)
+		console.log('host', host)
+		console.log('path', path)
+		console.log("AICOMMIT ENV END ====")
+	}
 	const { response, data } = await httpsPost(
 		// 'api.openai.com',
 		// 'api.deepseek.com',
 		host || 'api.openai.com',
-		'/v1/chat/completions',
-		// '/chat/completions',
+		path,
 		{
 			Authorization: `Bearer ${apiKey}`,
 		},
@@ -150,7 +164,8 @@ export const generateCommitMessage = async (
 	type: CommitType,
 	timeout: number,
 	proxy?: string,
-	host?: string
+	host?: string,
+	base_url?: string
 ) => {
 	try {
 		const completion = await createChatCompletion(
@@ -178,7 +193,8 @@ export const generateCommitMessage = async (
 			},
 			timeout,
 			proxy,
-			host
+			host,
+			base_url
 		);
 
 		return deduplicateMessages(

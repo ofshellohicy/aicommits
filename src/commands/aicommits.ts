@@ -75,7 +75,8 @@ export default async (
 				config.type,
 				config.timeout,
 				config.proxy,
-				config.host
+				config.host,
+				config.base_url
 			);
 		} finally {
 			s.stop('Changes analyzed');

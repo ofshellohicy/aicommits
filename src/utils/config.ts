@@ -118,6 +118,13 @@ const configParsers = {
 
 		return parsed;
 	},
+	base_url(base_url?: string) {
+		if (!base_url || base_url.length === 0) {
+			return null;
+		}
+
+		return base_url;
+	},
 	host(host?: string) {
 		if (!host || host.length === 0) {
 			// 默认使用 OpenAI 的 API 地址
