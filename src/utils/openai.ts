@@ -1,3 +1,4 @@
+import http from 'http';
 import https from 'https';
 import type { ClientRequest, IncomingMessage } from 'http';
 import type {
@@ -13,8 +14,10 @@ import { KnownError } from './error.js';
 import type { CommitType } from './config.js';
 import { generatePrompt } from './prompt.js';
 
-const httpsPost = async (
+const post = async (
+	protocol: 'http' | 'https',
 	hostname: string,
+	port: number,
 	path: string,
 	headers: Record<string, string>,
 	json: unknown,
@@ -27,10 +30,11 @@ const httpsPost = async (
 		data: string;
 	}>((resolve, reject) => {
 		const postContent = JSON.stringify(json);
-		const request = https.request(
+		const client = protocol === 'https' ? https : http;
+		const request = client.request(
 			{
-				port: 443,
 				hostname,
+				port,
 				path,
 				method: 'POST',
 				headers: {
@@ -39,7 +43,7 @@ const httpsPost = async (
 					'Content-Length': Buffer.byteLength(postContent),
 				},
 				timeout,
-				agent: proxy ? createHttpsProxyAgent(proxy) : undefined,
+				agent: protocol === 'https' && proxy ? createHttpsProxyAgent(proxy) : undefined,
 			},
 			(response) => {
 				const body: Buffer[] = [];
@@ -58,7 +62,7 @@ const httpsPost = async (
 			request.destroy();
 			reject(
 				new KnownError(
-					`Time out error: request host: ${hostname}${path} took over ${timeout}ms. Try increasing the \`timeout\` config, or checking the OpenAI API status https://status.openai.com`
+					`Time out error: request host: ${hostname}:${port}${path} took over ${timeout}ms. Try increasing the \`timeout\` config, or checking the OpenAI API status https://status.openai.com`
 				)
 			);
 		});
@@ -79,24 +83,25 @@ const createChatCompletion = async (
 	// console.log('json', json);
 	// console.log('timeout', timeout);
 	// console.log('proxy', proxy);
-	let path = '/v1/chat/completions'
+	let path = '/v1/chat/completions';
+	let protocol: 'http' | 'https' = 'https';
+	let port = 443;
 	if (base_url) {
-		// 解析 url 获取 host 和 path
-		const urlObj = new URL(base_url)
-		host = urlObj.hostname
-		// 因为默认是 /v1/chat/completions，所以需要拼接
-		// https://dashscope.aliyuncs.com/compatible-mode/v1
-		path = urlObj.pathname + '/chat/completions'
-		console.log("AICOMMIT ENV START ====")
-		console.log('base_url', base_url)
-		console.log('host', host)
-		console.log('path', path)
-		console.log("AICOMMIT ENV END ====")
+		const urlObj = new URL(base_url);
+		host = urlObj.hostname;
+		path = urlObj.pathname.replace(/\/$/, '') + '/chat/completions';
+		protocol = urlObj.protocol === 'http:' ? 'http' : 'https';
+		port = urlObj.port ? parseInt(urlObj.port, 10) : protocol === 'https' ? 443 : 80;
+		console.log("AICOMMIT ENV START ====");
+		console.log('base_url', base_url);
+		console.log('host', host);
+		console.log('path', path);
+		console.log("AICOMMIT ENV END ====");
 	}
-	const { response, data } = await httpsPost(
-		// 'api.openai.com',
-		// 'api.deepseek.com',
+	const { response, data } = await post(
+		protocol,
 		host || 'api.openai.com',
+		port,
 		path,
 		{
 			Authorization: `Bearer ${apiKey}`,
@@ -128,9 +133,12 @@ const createChatCompletion = async (
 	return JSON.parse(data) as CreateChatCompletionResponse;
 };
 
+// Strip think blocks from models that output reasoning (e.g. MiniMax with thinking).
+const stripThinkBlocks = (message: string) =>
+	message.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
 const sanitizeMessage = (message: string) =>
-	message
-		.trim()
+	stripThinkBlocks(message)
 		.replace(/[\n\r]/g, '')
 		.replace(/(\w)\.$/, '$1');
 
