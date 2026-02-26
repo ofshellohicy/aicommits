@@ -134,8 +134,15 @@ const createChatCompletion = async (
 };
 
 // Strip think blocks from models that output reasoning (e.g. MiniMax with thinking).
-const stripThinkBlocks = (message: string) =>
-	message.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+// If the only content was inside think, use the last non-empty line inside as fallback.
+const stripThinkBlocks = (message: string): string => {
+	const withoutThink = message.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+	if (withoutThink.length > 0) return withoutThink;
+	const innerMatch = message.match(/<think>([\s\S]*?)<\/think>/i);
+	if (!innerMatch) return message.trim();
+	const lines = innerMatch[1].split(/\n/).map((s) => s.trim()).filter(Boolean);
+	return lines[lines.length - 1] ?? innerMatch[1].trim().slice(0, 72);
+};
 
 const sanitizeMessage = (message: string) =>
 	stripThinkBlocks(message)
